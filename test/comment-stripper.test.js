@@ -20,3 +20,66 @@ for(const [language,input,expected] of cases)test(`${language} strips comments s
 test('preserves multiline layout inside removed blocks',()=>assert.equal(stripComments('a=1;/* one\n two */\nb=2;','javascript'),'a=1;\n\nb=2;'));
 test('does not strip comment markers inside unknown-language strings',()=>assert.equal(stripComments('text "http://keep" // remove','generic'),'text "http://keep" '));
 test('does not alter code when no comments exist',()=>{const code='const value = "https://example.com//keep";';assert.equal(stripComments(code,'javascript'),code);});
+
+test('javascript preserves regex after control-flow parentheses', () => {
+  const code = 'if (ready) /https?:\\/\\//.test(url); // remove\nnext();';
+  const expected = 'if (ready) /https?:\\/\\//.test(url); \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript preserves regex after return keyword', () => {
+  const code = 'function test() { return /https?:\\/\\//.test(url); // remove\n}';
+  const expected = 'function test() { return /https?:\\/\\//.test(url); \n}';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript removes comments after postfix division expressions', () => {
+  const code = 'const result = value++ / 2; // remove\nnext();';
+  const expected = 'const result = value++ / 2; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript handles postfix decrement before division', () => {
+  const code = 'const result = value-- / 2; // remove\nnext();';
+  const expected = 'const result = value-- / 2; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript handles division after grouped expressions', () => {
+  const code = 'const result = (value + 2) / 3; // remove\nnext();';
+  const expected = 'const result = (value + 2) / 3; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript handles division after function calls', () => {
+  const code = 'const result = getValue() / 2; // remove\nnext();';
+  const expected = 'const result = getValue() / 2; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript preserves regex inside a block after control flow', () => {
+  const code = 'if (ready) { /https?:\\/\\//.test(url); // remove\n}';
+  const expected = 'if (ready) { /https?:\\/\\//.test(url); \n}';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript treats object if method calls as division', () => {
+  const code = 'const result = obj.if(ready) / 2; // remove\nnext();';
+  const expected = 'const result = obj.if(ready) / 2; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript treats optional chaining if calls as division', () => {
+  const code = 'const result = obj?.if(ready) / 2; // remove\nnext();';
+  const expected = 'const result = obj?.if(ready) / 2; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});

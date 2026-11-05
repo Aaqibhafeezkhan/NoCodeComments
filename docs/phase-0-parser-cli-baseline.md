@@ -64,6 +64,21 @@ The current package contract requires Node.js 20+ and exposes `npm test`, which 
 - Auto-detection is heuristic and should not be treated as a language parser. Explicit language selection is the stronger contract.
 - Destructive file-system operations are not part of the current browser baseline. The application operates on in-memory text and user-selected files.
 
+## JavaScript Regex Detection Limitations
+
+JavaScript and TypeScript use `/` for both regular expression literals and division operators. The scanner uses surrounding lexical context to make a best-effort decision.
+
+The current detection handles common cases such as:
+
+- Regex literals after control-flow closing parentheses, such as `if (ready) /pattern/`.
+- Regex literals after keywords such as `return`, `throw`, and `yield`.
+- Division after postfix increment and decrement operators (`++` and `--`).
+- Division after grouped expressions and function calls.
+
+This detection is heuristic, not a complete ECMAScript or TypeScript parser. Complex or ambiguous syntax, including automatic semicolon insertion and nested template expressions, may require additional language-aware parsing.
+
+The scanner does not guarantee correct classification for every valid JavaScript or TypeScript expression. Users should review transformed code in complex cases.
+
 ## Parser strategy boundaries
 
 The scanner is appropriate for predictable delimiter-based comment syntax with explicitly configured language profiles. It is not a universal grammar engine. Future work must account for languages where comments interact with preprocessing, interpolation, nested lexical states, context-sensitive syntax, or dialect-specific rules.
