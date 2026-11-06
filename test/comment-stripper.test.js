@@ -83,3 +83,17 @@ test('javascript treats optional chaining if calls as division', () => {
 
   assert.equal(stripComments(code, 'javascript'), expected);
 });
+
+test('javascript treats return member access as division', () => {
+  const code = 'const result = obj.return / 2; // remove\nnext();';
+  const expected = 'const result = obj.return / 2; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
+
+test('javascript treats optional return member access as division', () => {
+  const code = 'const result = obj?.return / 2; // remove\nnext();';
+  const expected = 'const result = obj?.return / 2; \nnext();';
+
+  assert.equal(stripComments(code, 'javascript'), expected);
+});
