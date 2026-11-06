@@ -2,7 +2,11 @@ import { resolveLanguage } from './languages.js';
 
 function isIdentifierChar(char){return Boolean(char)&&/[\w$]/.test(char);}
 function previousSignificant(source,index){let i=index-1;while(i>=0&&/\s/.test(source[i]))i-=1;return i>=0?source[i]:'';}
-function looksLikeRegexStart(source,index){const previous=previousSignificant(source,index);if(!previous)return true;return /[=(:,[!&|?{};+\-*%^~<>]/.test(previous);}
+
+function isControlFlowCloseParen(source,index){let depth=0,openIndex=-1;for(let i=index-1;i>=0;i--){if(source[i]===')')depth++;else if(source[i]==='('){depth--;if(depth===0){openIndex=i;break;}}}if(openIndex===-1)return false;let end=openIndex-1;while(end>=0&&/\s/.test(source[end]))end--;let start=end;while(start>=0&&/[\w$]/.test(source[start]))start--;if(start>=0&&/[.?]/.test(source[start]))return false;return ['if','while','for','with','switch','catch'].includes(source.slice(start+1,end+1));}
+
+function looksLikeRegexStart(source,index){const previous=previousSignificant(source,index);if(!previous)return true;let previousIndex=index-1;while(previousIndex>=0&&/\s/.test(source[previousIndex]))previousIndex--;if((source[previousIndex]==='+'&&source[previousIndex-1]==='+')||(source[previousIndex]==='-'&&source[previousIndex-1]==='-'))return false;if(previous===')'&&isControlFlowCloseParen(source,index))return true;let end=index-1;while(end>=0&&/\s/.test(source[end]))end--;let start=end;while(start>=0&&/[\w$]/.test(source[start]))start--;const previousToken=source.slice(start+1,end+1);if(['return','throw','case','delete','void','typeof','yield','await','else','do'].includes(previousToken))return true;return /[=(:,[!&|?{};+\-*%^~<>]/.test(previous);}
+
 function keywordCommentStart(source,index,keyword){if(source.slice(index,index+keyword.length).toUpperCase()!==keyword)return false;const before=source[index-1],after=source[index+keyword.length];return!isIdentifierChar(before)&&!isIdentifierChar(after);}
 function consumeString(source,start,delimiter){let i=start+delimiter.length;while(i<source.length){if(source.startsWith(delimiter,i))return i+delimiter.length;if(source[i]==='\\')i+=2;else i+=1;}return source.length;}
 function consumeBlockComment(source,start,opening,closing){let i=start+opening.length;let depth=1;const nested=['/*','{-','/+','#=','#['].includes(opening);while(i<source.length){if(nested&&source.startsWith(opening,i)){depth+=1;i+=opening.length;continue;}if(source.startsWith(closing,i)){depth-=1;i+=closing.length;if(depth===0)return i;continue;}i+=1;}return source.length;}
